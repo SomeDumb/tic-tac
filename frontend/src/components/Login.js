@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { saveToken } from '../services/authServices';
+import { saveToken, loginUser, registerUser } from '../services/authServices';
 
 // MUI
 import Avatar from '@mui/material/Avatar';
@@ -20,33 +19,6 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 const theme = createTheme();
 
-
-async function loginUser(credentials) {
-  const token = await axios({
-      url: '/api-token-auth/',
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      data: JSON.stringify(credentials),
-    })
-    .then(res => res.data)
-    .catch((err) => { console.log(err) });
-  return token
-}
-
-async function registerUser(credentials){
-  await axios({
-    url: "/api/users/",
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    data: JSON.stringify(credentials)
-  })
-  .then(res => res.data)
-  .catch((err) => { console.log(err) });
-}
 
 export default function Login({ setToken }){
     const [username, setUsername] = useState();

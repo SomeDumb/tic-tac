@@ -1,13 +1,4 @@
-import jwtDecode from "jwt-decode";
-
-export function getCurrentUser() {
-    try {
-        const token = localStorage.getItem("token");
-        return jwtDecode(token);
-    } catch (error) {
-        return null;
-    }
-}
+import axios from 'axios';
 
 export function logout() {
     localStorage.removeItem("token");
@@ -25,3 +16,30 @@ export function saveToken(setToken, jsonToken) {
         setToken(token)
     }
 };
+
+export async function loginUser(credentials) {
+    const token = await axios({
+        url: '/api-token-auth/',
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(credentials),
+      })
+      .then(res => res.data)
+      .catch((err) => { console.log(err) });
+    return token
+  }
+  
+export async function registerUser(credentials){
+    await axios({
+        url: "/api/users/",
+        method: "POST",
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(credentials)
+    })
+    .then(res => res.data)
+    .catch((err) => { console.log(err) });
+}

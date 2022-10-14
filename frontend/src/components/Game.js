@@ -1,14 +1,28 @@
 import React, {useState} from "react";
-import './game.css';
+import Typography from '@mui/material/Typography';
+import Alert from "@mui/material/Alert"
+import AlertTitle from "@mui/material/AlertTitle"
+import Box from '@mui/material/Box';
+import LinearProgress from '@mui/material/LinearProgress';
+import Button from '@mui/material/Button';
+import { getToken } from '../services/authServices'
+import { Container } from "@mui/system";
+
+
+const code = window.location.href.split('/')[4]
+
+const char = window.location.href.split('/')[5]
+
+const token = getToken();
+
+const ws = new WebSocket("ws://192.168.1.70:8000/ws/room/"+code+"/"+char+"?token="+token);
 
 
 function Square({number, value, onPress}){
 
     return (
-        <button number={number} onClick={onPress} className="square">{value}</button>
+        <Button style={{maxWidth: '60px', maxHeight: '60px', minWidth: '60px', minHeight: '60px'}} variant="contained" number={number} onClick={onPress} className="square">{value}</Button>
     )
-
-
 }
 
 
@@ -63,25 +77,48 @@ function Board(){
         status = 'Ничья'
     }
     else {
-      status = 'Следующий ход: ' + (xIsNext ? 'X' : 'O');
+      status = 'Next move: ' + (xIsNext ? 'X' : 'O');
     }
+
+    ws.addEventListener('message', (event) => {
+        const newBoard = board;
+        const data = JSON.parse(event.data);
+        const row = data.row;
+        const col = data.col;
+        const moved = data.char
+
+        if (xIsNext && char === 'o' && moved==='x') {
+            newBoard[row][col] = 'X';
+            setWinner(calculateWinner())
+            setState(false);
+        }
+        else if (!(xIsNext) && char === 'x'  && moved==='o'){
+            newBoard[row][col] = 'O';
+            setWinner(calculateWinner())
+            setState(true);
+        }
+        setBoard([...newBoard]);
+    });
 
     const handleClick = (row, col) => {
         const newBoard = board
-
+        ws.send(JSON.stringify({message:"clicked "+row+col, text:"clicked", event:"MESSAGE"}))
         if (board[row][col] === ""){
-            if (xIsNext){
+            if (xIsNext && char ==='x'){
                 newBoard[row][col] = 'X'
                 setState(false)
+                setWinner(calculateWinner())
+                ws.send(JSON.stringify({message:'moved',event:'MOVE', row:row, col:col, char:'x'}));
+                setBoard([...newBoard]);
             }
-            else{
+            else if (!(xIsNext) && char==='o'){
                 newBoard[row][col] = 'O'
                 setState(true)
+                setWinner(calculateWinner())
+                ws.send(JSON.stringify({message:'moved',event:'MOVE', row:row, col:col, char:'o'}));
+                setBoard([...newBoard]);
             }
-            setWinner(calculateWinner())
-            setBoard([...newBoard]);
         }
-
     }
 
 
@@ -96,10 +133,23 @@ function Board(){
 
     return (
         <div>
-          <div className="status">{status}</div>
-          <div className="board">
-            {squares}
-          </div>
+            <Box sx={{marginTop: 4}}>
+                <Typography color="#1a76d2" component="h1" variant="h4">
+                            {status}
+                </Typography>
+            </Box>
+            <Box sx={{
+                    marginBottom:8,
+                    marginTop: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: "space-between"
+                }} >
+                <div className="board">
+                    {squares}
+                </div>
+            </Box>
         </div>
     )
 
@@ -107,10 +157,80 @@ function Board(){
 
 
 export default function Game(){
+    const [ error, setError ] = useState(false);
+    const [connected, setConnected] = useState(false);
+    const [ready, setReady] = useState(false);
 
-    return (
-        <div className="Game">
-            <Board />
-        </div>
-    )
+    ws.onopen = (event) => {
+        ws.send(JSON.stringify({ event:"CONNECTED"}))
+    }
+
+    ws.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+        if (data.connected){
+            setConnected(true);
+        }
+        if (data.ready===true)
+        {
+            setReady(true);
+        }
+        if (data.ready === false){
+            setReady(false);
+        }
+
+    });
+
+    ws.onerror = function (event) {
+        setError(true);
+    }
+
+    
+    if (error){
+        return(
+            <Box sx={{ marginTop: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                }}>
+                <Alert severity="error">
+                    <AlertTitle>Error</AlertTitle>
+                    This is an error alert — <strong>check it out!</strong>
+                </Alert>
+            </Box>
+        )
+    }
+    if(connected && ready)
+    {
+        return (
+
+            <Container component="main" maxWidth="sm" >
+                <Box
+                sx={{
+                    marginTop: 8,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    border: 1,
+                    borderRadius: '16px',
+                    borderColor: 'primary.main',
+                }}
+                >
+                    <div className="Game">
+                        <Board/>
+                    </div>
+                </Box>
+            </Container>
+        )
+    }
+    else if (connected){
+        return (
+            <Box sx={{ marginTop: 8,}}>
+                <LinearProgress />
+                <Typography component="h1" variant="h4">
+                                Wait for user
+                </Typography>
+            </Box>
+        )
+    }
+
 }

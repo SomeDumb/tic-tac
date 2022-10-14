@@ -7,10 +7,10 @@ import Button from '@mui/material/Button';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import TextField from '@mui/material/TextField';
-import TabPanel from '@mui/lab/TabPanel';
-
-
+import { useNavigate } from 'react-router-dom';
 import { blue } from '@mui/material/colors';
+import { getRoom, createRoom } from '../services/roomServices';
+
 
 const theme = createTheme({
   palette: {
@@ -21,49 +21,128 @@ const theme = createTheme({
 });
 
 
-function ConnectToRoom(){
+function ConnectMenu(){
 
-    return (
-        <Box sx={{ m: 5, width: 250, height: '100px', }}>
-            <TextField 
-            inputProps={{ style: { textTransform: "uppercase" } }} 
-            margin="normal"
-            fullWidth
-            autoFocus
-            label="Code"
-            />
-            <Button>
-                Connect
-            </Button>
-        </Box>
-    )
+    const [code, setCode] = useState('');
+    const [errorText, setErrorText] = useState('');
+    const [chooseChar, setChooseChar] = useState(false);
+    const navigate = useNavigate();
+
+    const handleClick = async (e) => {
+
+        if (code.length !== 5){
+            setErrorText('Code must be 5 characters');
+        }
+        else{
+            setErrorText('');
+            await getRoom(code).then(room =>{
+
+                if (room.o_user === null && room.x_user === null){
+                    setChooseChar(true);
+                }
+                else if (room.o_user !== null) {
+                    charChoosed('x');
+                }
+                else if (room.x_user !== null){
+                    charChoosed('o');
+                }
+
+            }).catch((err) => { setErrorText('Room Not Found') });
+        }
+    };
+
+    const handleChange = (e) => {
+        const code = e.target.value.toUpperCase();
+        if (code.length < 6 && !(/\s/g.test(code))) {
+            setCode(code);
+            setErrorText('');
+        }
+    };
+
+    const charChoosed = (char) => {
+        navigate('game/'+code+'/'+char+'/');
+    }
+
+    if (chooseChar === false){
+        return (
+            <Box sx={{ m: 5, width: 250, height: '100px', }}>
+                <TextField 
+                margin="normal"
+                fullWidth
+                autoFocus
+                label="Code"
+                value={code}
+                error={errorText.length === 0 ? false : true}
+                helperText={errorText}
+                onChange={handleChange}
+                onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                        handleClick();
+                    }
+                }}
+                />
+                <Button type="submit" onClick={handleClick}>
+                    Connect
+                </Button>
+            </Box>
+        )
+    }
+    else{
+        return(
+            <ChooseChar setChar={charChoosed} />
+        )
+    }
 
 }
 
 
-function CreateRoom(){
-    const [code, setCode] = useState();
+function ChooseChar({setChar}){
 
-    
+    return(
+        <Box sx={{ m: 5, width: 250, height: '100px', display: 'flex', flexDirection: 'column', 
+        alignItems: 'center', '& button': { m: 1 },}}>
 
-    return (
-        <Box sx={{ 
-            m: 5, width: 250, 
-            '& button': { m: 1 },
-            height: '100px',
-        }}>
-
-
-            <Button size="large" variant="contained">
-                o
-            </Button>
-            <Button size="large" variant="contained">
+            <Box sx={{display: 'flex', }}>
+                <Button 
+                    style={{minWidth: '80px', minHeight: '50px'}} 
+                    size="large" 
+                    variant="contained"
+                    onClick={e => setChar('o')}
+                >
+                    o
+                </Button>
+            <Button 
+                style={{minWidth: '80px', minHeight: '50px'}} 
+                size="large" 
+                variant="contained"
+                onClick={e => setChar('x')}
+            >
                 x
             </Button>
+            </Box>
+            <Box sx={{display: 'flex', }}>
             <Typography component="h1" variant="h6">
                 CHOOSE CHARACTER
             </Typography>
+            </Box>
         </Box>
+    )
+}
+
+function CreateRoomMenu(){
+    const navigate = useNavigate();
+
+    const handleCharClick = async (char) => {
+        await createRoom().then( 
+            createdRoom =>  {
+                getRoom(createdRoom.code).then( room =>{
+                    navigate('game/'+room.code+'/'+char+'/')
+                });
+            });
+    }
+
+    return (
+        <ChooseChar setChar={handleCharClick} />
     )
 }
 
@@ -76,9 +155,6 @@ export default function Menu(){
         setTabIndex(newTabIndex);
     };
 
-
-    
-
     return (
         <div className="menu">
             <ThemeProvider theme={theme}>
@@ -86,8 +162,6 @@ export default function Menu(){
                     <Box
                     sx={{
                         marginTop: 8,
-                        display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
                         border: 1,
                         borderRadius: '16px',
@@ -112,12 +186,20 @@ export default function Menu(){
                                 <Tab label="Create"  />
                             </Tabs>
                         </Box>
-                        {tabIndex === 0 && (
-                            <ConnectToRoom/>
-                        )}
-                        {tabIndex === 1 &&(
-                            <CreateRoom />
-                        )}
+                        <Box sx={{
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                width: 1, 
+                                borderBottom: 1, 
+                                borderColor: 'divider'  }}>
+                            {tabIndex === 0 && (
+                                <ConnectMenu/>
+                            )}
+                            {tabIndex === 1 &&(
+                                <CreateRoomMenu />
+                            )}
+                        </Box>
                 </Box>
                 </Container>
             </ThemeProvider>

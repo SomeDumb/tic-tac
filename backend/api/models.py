@@ -42,6 +42,9 @@ class Room(models.Model):
             if self.o_user and self.x_user:
                 self.is_occupied = True
             self.save()
+        else:
+            return False
+        
         return True
         
         
