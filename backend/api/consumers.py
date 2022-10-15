@@ -58,7 +58,6 @@ class WSConsumer(JsonWebsocketConsumer):
         })
     
     def receive(self, text_data):
-        text_data_json = json.loads(text_data)
         user = self.scope["user"]
         json_user = UserSerializer(user).data
         json_user = JSONRenderer().render(json_user).decode("utf-8")
@@ -71,23 +70,6 @@ class WSConsumer(JsonWebsocketConsumer):
                 'type': 'send_event',
                 **response
             })
-
-        """
-        if event == 'START':
-            # Send message to room group
-            async_to_sync(self.channel_layer.group_send)(self.room_group_name, {
-                'type': 'send_event',
-                'message': 'started SHIT',
-            })
-
-        if event == 'END':
-            # Send message to room group
-            async_to_sync(self.channel_layer.group_send)(self.room_group_name, {
-                'type': 'send_event',
-                'message': message,
-                'event': "END"
-            })
-        """
         
         if event == 'MESSAGE':
             async_to_sync(self.channel_layer.group_send)(self.room_group_name, {
@@ -103,8 +85,6 @@ class WSConsumer(JsonWebsocketConsumer):
         self.send(text_data=json.dumps({**event}))
     
     def send_message(self, event):
-        message = event['message']
-        username = event['username']
         # Send message to WebSocket
         self.send(text_data=json.dumps({
             'type':'message',

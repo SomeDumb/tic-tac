@@ -1,21 +1,13 @@
-import React, {useState} from "react";
+import React, {useState, useLayoutEffect, useRef} from "react";
 import Typography from '@mui/material/Typography';
 import Alert from "@mui/material/Alert"
 import AlertTitle from "@mui/material/AlertTitle"
 import Box from '@mui/material/Box';
-import LinearProgress from '@mui/material/LinearProgress';
 import Button from '@mui/material/Button';
 import { getToken } from '../services/authServices'
 import { Container } from "@mui/system";
-
-
-const code = window.location.href.split('/')[4]
-
-const char = window.location.href.split('/')[5]
-
-const token = getToken();
-
-const ws = new WebSocket("ws://192.168.1.70:8000/ws/room/"+code+"/"+char+"?token="+token);
+import { useParams } from "react-router-dom";
+import { MovingComponent } from 'react-moving-text';
 
 
 function Square({number, value, onPress}){
@@ -26,7 +18,7 @@ function Square({number, value, onPress}){
 }
 
 
-function Board(){
+const Board = React.forwardRef((_props, ref)=>{
 
     let [board, setBoard] = useState([
         ["", "", ""],
@@ -35,6 +27,7 @@ function Board(){
       ]);
     let [winner, setWinner] = useState(null);
     let [xIsNext, setState] = useState(true);
+    const char = useParams().char;
 
     function isDraw() {
         for (const element of board) {
@@ -71,16 +64,16 @@ function Board(){
 
     let status;
     if (winner) {
-        status = 'Выиграл: ' + winner;
+        status = 'Winner is: ' + winner;
     } 
     else if (isDraw()){
         status = 'Ничья'
     }
     else {
-      status = 'Next move: ' + (xIsNext ? 'X' : 'O');
+      status = (xIsNext && char === 'x' ) || (!xIsNext && char=== 'o')  ? 'Your move' : 'Opponent move';
     }
 
-    ws.addEventListener('message', (event) => {
+    ref.current.addEventListener('message', (event) => {
         const newBoard = board;
         const data = JSON.parse(event.data);
         const row = data.row;
@@ -102,20 +95,20 @@ function Board(){
 
     const handleClick = (row, col) => {
         const newBoard = board
-        ws.send(JSON.stringify({message:"clicked "+row+col, text:"clicked", event:"MESSAGE"}))
+        ref.current.send(JSON.stringify({message:"clicked "+row+col, text:"clicked", event:"MESSAGE"}))
         if (board[row][col] === ""){
             if (xIsNext && char ==='x'){
                 newBoard[row][col] = 'X'
                 setState(false)
                 setWinner(calculateWinner())
-                ws.send(JSON.stringify({message:'moved',event:'MOVE', row:row, col:col, char:'x'}));
+                ref.current.send(JSON.stringify({message:'moved',event:'MOVE', row:row, col:col, char:'x'}));
                 setBoard([...newBoard]);
             }
             else if (!(xIsNext) && char==='o'){
                 newBoard[row][col] = 'O'
                 setState(true)
                 setWinner(calculateWinner())
-                ws.send(JSON.stringify({message:'moved',event:'MOVE', row:row, col:col, char:'o'}));
+                ref.current.send(JSON.stringify({message:'moved',event:'MOVE', row:row, col:col, char:'o'}));
                 setBoard([...newBoard]);
             }
         }
@@ -153,36 +146,51 @@ function Board(){
         </div>
     )
 
-}
+});
 
 
 export default function Game(){
     const [ error, setError ] = useState(false);
     const [connected, setConnected] = useState(false);
     const [ready, setReady] = useState(false);
+    const {code, char} = useParams();
+    const token = getToken();
+    const ws = useRef(null);
 
-    ws.onopen = (event) => {
-        ws.send(JSON.stringify({ event:"CONNECTED"}))
-    }
-
-    ws.addEventListener('message', (event) => {
-        const data = JSON.parse(event.data);
-        if (data.connected){
-            setConnected(true);
+    useLayoutEffect(()=>{
+        if (!ws.current) {
+            const socket = new WebSocket("ws://192.168.1.70:8000/ws/room/"+code+"/"+char+"?token="+token)
+            ws.current = socket;
         }
-        if (data.ready===true)
-        {
-            setReady(true);
+        ws.current.onopen = () => {
+            ws.current.send(JSON.stringify({ event:"CONNECTED"}))
         }
-        if (data.ready === false){
-            setReady(false);
+    
+        ws.current.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+            if (data.connected){
+                setConnected(true);
+            }
+            if (data.ready===true)
+            {
+                setReady(true);
+            }
+            if (data.ready === false){
+                setReady(false);
+            }
+    
+        });
+    
+        ws.current.onerror = function () {
+            setError(true);
         }
 
-    });
+        ws.current.onclose = () => {
+            setError(true);
+        }
 
-    ws.onerror = function (event) {
-        setError(true);
-    }
+    }, [error, connected, ready, code, char, token])
+
 
     
     if (error){
@@ -216,7 +224,17 @@ export default function Game(){
                 }}
                 >
                     <div className="Game">
-                        <Board/>
+                    <MovingComponent
+                        type="popIn"
+                        duration="800ms"
+                        delay="0s"
+                        direction="alternate"
+                        timing="ease"
+                        iteration="1"
+                        fillMode="none">
+
+                        <Board ref={ws} />
+                    </MovingComponent>
                     </div>
                 </Box>
             </Container>
@@ -224,12 +242,35 @@ export default function Game(){
     }
     else if (connected){
         return (
-            <Box sx={{ marginTop: 8,}}>
-                <LinearProgress />
-                <Typography component="h1" variant="h4">
-                                Wait for user
-                </Typography>
-            </Box>
+            <div className="wait">
+                <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", marginTop:8 }}>
+                <MovingComponent
+                    type="popIn"
+                    duration="1000ms"
+                    delay="0s"
+                    direction="alternate"
+                    timing="ease"
+                    iteration="infinite"
+                    fillMode="none">
+                        <Typography component="h2" variant="h5">
+                                        Wait for user...
+                        </Typography>
+
+                    </MovingComponent>
+
+                </Box>
+
+                <Box sx={{marginTop: 8,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',}}  >
+                    <Typography component="h1" variant="h4">
+                        Room code: <b>{code}</b>
+                    </Typography>
+                </Box>
+                    
+
+            </div>
         )
     }
 
