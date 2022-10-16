@@ -26,8 +26,7 @@ export async function loginUser(credentials) {
         },
         data: JSON.stringify(credentials),
       })
-      .then(res => res.data)
-      .catch((err) => { console.log(err) });
+      .then(res => res.data);
     return token
   }
   

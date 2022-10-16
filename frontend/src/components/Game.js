@@ -159,7 +159,9 @@ export default function Game(){
 
     useLayoutEffect(()=>{
         if (!ws.current) {
-            const socket = new WebSocket("ws://192.168.1.70:8000/ws/room/"+code+"/"+char+"?token="+token)
+            let host = (window.location.host === window.location.hostname ? window.location.hostname : window.location.host)
+            host = (window.location.protocol === 'https:' ? 'wss' : 'ws') + '://' + host
+            const socket = new WebSocket(host+"/ws/room/"+code+"/"+char+"?token="+token)
             ws.current = socket;
         }
         ws.current.onopen = () => {
@@ -202,7 +204,7 @@ export default function Game(){
                 }}>
                 <Alert severity="error">
                     <AlertTitle>Error</AlertTitle>
-                    This is an error alert — <strong>check it out!</strong>
+                    This is an error alert — <strong>reload the page!</strong>
                 </Alert>
             </Box>
         )

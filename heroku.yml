@@ -1,0 +1,5 @@
+build:
+  docker:
+    web: Dockerfile.prod
+run:
+  web: daphne -b 0.0.0.0 -p $PORT tic_tac_toe.asgi:application

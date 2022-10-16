@@ -1,0 +1,48 @@
+services:
+  backend:
+    build: ./backend
+    container_name: tic-tac-toe
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - 8000:8000
+    env_file:
+      - ./dev.env
+    depends_on:
+      - db
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+      # One-way volume to use node_modules from inside image
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend
+      - redis
+    command: npm start
+  db:
+    image: postgres:14.5-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./dev.env
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=payment_db
+    ports:
+      - "5433:5432"
+  redis:
+    restart: always
+    ports:
+      - '6379:6379'
+    image: redis:alpine
+volumes:
+  postgres_data:

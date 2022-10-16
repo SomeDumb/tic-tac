@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import datetime
 from pathlib import Path
 import os
+import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,13 +21,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5!n&^75$yf*s-25)-m9nw+ba_=+e_elcg!j_wms5m(f424*2$q'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'foo')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', True)
 
-ALLOWED_HOSTS = ['*']
+print(DEBUG)
 
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", None)
+
+if ALLOWED_HOSTS:
+    ALLOWED_HOSTS=ALLOWED_HOSTS.split(',')
+else:
+    ALLOWED_HOSTS=['*']
+
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", None)
+
+if CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS=CSRF_TRUSTED_ORIGINS.split(',')
+else:
+    del CSRF_TRUSTED_ORIGINS
 
 # Application definition
 
@@ -38,14 +52,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # My
-    'api',
-    
     # Side
     'channels',
+        # My
+    'api',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'whitenoise'
 ]
 
 MIDDLEWARE = [
@@ -57,14 +71,16 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'tic_tac_toe.urls'
 
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates'],
+        'DIRS': [os.path.join(BASE_DIR, "../", "frontend", "build")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,12 +99,9 @@ WSGI_APPLICATION = 'tic_tac_toe.wsgi.application'
 ASGI_APPLICATION = "tic_tac_toe.asgi.application"
 
 CHANNEL_LAYERS = {
-    'default': {
-         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-         'CONFIG': {
-              "hosts": [('127.0.0.1', 6379)],
-         },
-    },
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
 }
 
 # Database
@@ -96,10 +109,21 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
+        "NAME": os.environ.get("SQL_DATABASE", BASE_DIR / "db.sqlite3"),
+        "USER": os.environ.get("SQL_USER", "user"),
+        "PASSWORD": os.environ.get("SQL_PASSWORD", "password"),
+        "HOST": os.environ.get("SQL_HOST", "localhost"),
+        "PORT": os.environ.get("SQL_PORT", "5432"),
+        }
 }
+
+
+DATABASE_URL = os.environ.get("DATABASE_URL", False)
+
+if DATABASE_URL:
+    db_from_env = dj_database_url.config(default=DATABASE_URL, conn_max_age=500)
+    DATABASES['default'].update(db_from_env)
 
 
 # Password validation
@@ -136,8 +160,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+## TODO change static paths to make things work
+
+STATICFILES_DIRS = [os.path.join(
+    BASE_DIR, "../", "frontend", "build", "static")]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+STATIC_URL = "/static/"
+WHITENOISE_ROOT = os.path.join(BASE_DIR, "../", "frontend", "build", "root")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

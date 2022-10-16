@@ -1,4 +1,5 @@
 import axios from 'axios';
+import {logout} from './authServices'
 
 export async function getRoom(code){
     const room = await axios({
@@ -9,6 +10,11 @@ export async function getRoom(code){
         },
       })
       .then(res => res.data)
+      .catch(function (error) {
+        if (error.response.status === 401) {
+            console.log('catched');
+        }
+      });
     return room
 }
 
@@ -21,6 +27,11 @@ export async function createRoom(){
         },
       })
       .then(res => res.data)
-      .catch((err) => { console.log(err) });
+      .catch(function (error) {
+        if (error.response.status === 401) {
+            console.log('catched');
+            logout();
+        }
+      });
     return room
 }
