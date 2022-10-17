@@ -1,25 +1,22 @@
-# tic-tac
+# Fullstack tic-tac-toe
 
-This project is a tic-tac-toe game that uses django for backend and React for frontend. 
-It uses websocket to allow real-time game between two players.
+This is a simple fullstack app that allows to play tic-tac-toe in realtime using websocket protocol.
 
-To run this project go to main folder and install python dependencies.
+## Stack
+#### Backend
+- Django
+- Redis
+- Docker
+#### Frontend
+- React
+- Material-UI
+- Axios
 
-```sh
-cd tic-tac
-pip install -r requirements.txt
-```
+## Development
 
-Then migrate and run backend. 
-
-```python
-python manage.py migrate
-python manage.py runserver
-```
-
-Now then the server is working you can go to frontend folder and install react dependencyes via
+For development purposes used [docker-compose](https://github.com/SomeDumb/tic-tac/blob/master/docker-compose.yml).
+To run project simply type:
 
 ```sh
-cd tic-tac-toe/frontend/
-npm install
+docker-compose up
 ```
