@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {logout} from './authServices'
 
-export async function getRoom(code){
+export async function getRoom(code, setToken){
     const room = await axios({
         url: '/api/room/'+code+'/',
         method: "GET",
@@ -12,13 +12,13 @@ export async function getRoom(code){
       .then(res => res.data)
       .catch(function (error) {
         if (error.response.status === 401) {
-            console.log('catched');
+          logout(setToken);
         }
       });
     return room
 }
 
-export async function createRoom(){
+export async function createRoom(setToken){
     const room = await axios({
         url: '/api/room/',
         method: "POST",
@@ -29,8 +29,7 @@ export async function createRoom(){
       .then(res => res.data)
       .catch(function (error) {
         if (error.response.status === 401) {
-            console.log('catched');
-            logout();
+            logout(setToken);
         }
       });
     return room

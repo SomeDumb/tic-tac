@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-export function logout() {
+export function logout(setToken) {
+    setToken('');
     localStorage.removeItem("token");
 }
 
@@ -40,5 +41,4 @@ export async function registerUser(credentials){
         data: JSON.stringify(credentials)
     })
     .then(res => res.data)
-    .catch((err) => { console.log(err) });
 }

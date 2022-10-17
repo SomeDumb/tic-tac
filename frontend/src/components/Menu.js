@@ -3,6 +3,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -10,7 +11,7 @@ import TextField from '@mui/material/TextField';
 import { useNavigate } from 'react-router-dom';
 import { blue } from '@mui/material/colors';
 import { getRoom, createRoom } from '../services/roomServices';
-
+import AccountMenu from './Profile'
 
 const theme = createTheme({
   palette: {
@@ -21,7 +22,7 @@ const theme = createTheme({
 });
 
 
-function ConnectMenu(){
+function ConnectMenu({setToken}){
 
     const [code, setCode] = useState('');
     const [errorText, setErrorText] = useState('');
@@ -35,7 +36,7 @@ function ConnectMenu(){
         }
         else{
             setErrorText('');
-            await getRoom(code).then(room =>{
+            await getRoom(code, setToken).then(room =>{
 
                 if (room.o_user === null && room.x_user === null){
                     setChooseChar(true);
@@ -67,6 +68,7 @@ function ConnectMenu(){
         return (
             <Box sx={{ m: 5, width: 250, height: '100px', }}>
                 <TextField 
+                autoCapitalize='characters'
                 margin="normal"
                 fullWidth
                 autoFocus
@@ -129,13 +131,13 @@ function ChooseChar({setChar}){
     )
 }
 
-function CreateRoomMenu(){
+function CreateRoomMenu({ setToken }){
     const navigate = useNavigate();
 
     const handleCharClick = async (char) => {
-        await createRoom().then( 
+        await createRoom(setToken).then( 
             createdRoom =>  {
-                getRoom(createdRoom.code).then( room =>{
+                getRoom(createdRoom.code, setToken).then( room =>{
                     navigate('game/'+room.code+'/'+char+'/')
                 });
             });
@@ -147,10 +149,9 @@ function CreateRoomMenu(){
 }
 
 
-export default function Menu(){
+export default function Menu({ setToken }){
 
     const [tabIndex, setTabIndex] = useState(0);
-
     const handleTabChange = (event, newTabIndex) => {
         setTabIndex(newTabIndex);
     };
@@ -159,6 +160,7 @@ export default function Menu(){
         <div className="menu">
             <ThemeProvider theme={theme}>
                 <Container component="main" maxWidth="xs" >
+
                     <Box
                     sx={{
                         marginTop: 8,
@@ -168,6 +170,12 @@ export default function Menu(){
                         borderColor: 'primary.main',
                     }}
                     >
+
+                        <Grid container justifyContent="flex-end">
+                            <AccountMenu setToken={setToken}/>
+                        </Grid>
+                            
+
                         <Box 
                         sx={{
                                 display: 'flex', 
@@ -191,13 +199,12 @@ export default function Menu(){
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
                                 width: 1, 
-                                borderBottom: 1, 
-                                borderColor: 'divider'  }}>
+                            }}>
                             {tabIndex === 0 && (
-                                <ConnectMenu/>
+                                <ConnectMenu setToken={setToken} />
                             )}
                             {tabIndex === 1 &&(
-                                <CreateRoomMenu />
+                                <CreateRoomMenu setToken={setToken} />
                             )}
                         </Box>
                 </Box>

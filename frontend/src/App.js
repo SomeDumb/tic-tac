@@ -20,8 +20,8 @@ function App() {
     return (
       <div className="App">
         <Routes>
-          <Route path="/" element={<Menu />}></Route>
-          <Route path="/game/:code/:char/" element={<Game />}>
+          <Route path="/" element={<Menu setToken={setToken}/>}></Route>
+          <Route path="/game/:code/:char/" element={<Game setToken={setToken}/>}>
           </Route>
         </Routes>
       </div>

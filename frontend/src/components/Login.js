@@ -13,10 +13,22 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+import InputAdornment from '@mui/material/InputAdornment';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputLabel from '@mui/material/InputLabel';
+import IconButton from '@mui/material/IconButton';
 
 const theme = createTheme();
 
+const Alert = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 export default function Login({ setToken }){
     const [username, setUsername] = useState();
@@ -24,7 +36,18 @@ export default function Login({ setToken }){
     const [first_name, setFirstName] = useState();
     const [last_name, setLastName] = useState();
     const [authMode, setAuthMode] = useState("signin");
-    
+    const [open, setOpen] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState({});
+
+    const handleClose = (event, reason) => {
+      if (reason === 'clickaway') {
+        return;
+      }
+  
+      setOpen(false);
+    };
+
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         await loginUser({
@@ -33,6 +56,11 @@ export default function Login({ setToken }){
         }).then(token =>{
           saveToken(setToken, token)
         })
+        .catch(function (error) {
+          if (error.response.status === 400) {
+            setOpen(true);
+          }
+        });
       }
     
     const handleRegisterSubmit = async (e) => {
@@ -43,6 +71,12 @@ export default function Login({ setToken }){
         first_name,
         last_name,
       })
+      .catch(function (error){
+        if (error.response.status === 400){
+          console.log(error.response.data);
+          setError(error.response.data);
+        }
+      });
       await loginUser({
         username,
         password,
@@ -50,6 +84,10 @@ export default function Login({ setToken }){
         saveToken(setToken, token)
       })
     }
+
+    const handleMouseDownPassword = (event) => {
+      event.preventDefault();
+    };
     
       if (authMode === "signin") {
         return (
@@ -83,17 +121,29 @@ export default function Login({ setToken }){
                     autoFocus
                     onChange={e => setUsername(e.target.value)}
                   />
-                  <TextField
-                    margin="normal"
+                  <FormControl fullWidth>
+                  <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+                  <OutlinedInput
+                    id="outlined-adornment-password"
+                    type={showPassword ? 'text' : 'password'}
+                    onChange={e => setPassword(e.target.value)}
                     required
                     fullWidth
-                    name="password"
+                    endAdornment={
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={(e)=>setShowPassword(!showPassword)}
+                          onMouseDown={handleMouseDownPassword}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    }
                     label="Password"
-                    type="password"
-                    id="password"
-                    autoComplete="current-password"
-                    onChange={e => setPassword(e.target.value)}
                   />
+                  </FormControl>
                   <Button
                     type="submit"
                     fullWidth
@@ -117,6 +167,11 @@ export default function Login({ setToken }){
 
                 </Box>
               </Box>
+              <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
+                  <Alert onClose={handleClose} severity="error" sx={{ width: '100%' }}>
+                    Wrong credentials!
+                  </Alert>
+              </Snackbar>
             </Container>
           </ThemeProvider>
         )
@@ -166,6 +221,8 @@ export default function Login({ setToken }){
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  error={ error.username !== undefined }
+                  helperText={ error.username }
                   required
                   fullWidth
                   id="username"
@@ -176,16 +233,35 @@ export default function Login({ setToken }){
                 />
               </Grid>
               <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  name="password"
-                  label="Password"
-                  type="password"
-                  id="password"
-                  autoComplete="new-password"
-                  onChange={e => setPassword(e.target.value)}
-                />
+                  <FormControl fullWidth>
+                  <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+                  <OutlinedInput
+                    id="outlined-adornment-password"
+                    type={showPassword ? 'text' : 'password'}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    fullWidth
+                    error={ error.password !== undefined }
+                    endAdornment={
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={(e)=>setShowPassword(!showPassword)}
+                          onMouseDown={handleMouseDownPassword}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    }
+                    label="Password"
+                  />
+                  {!!error.password && (
+                    <FormHelperText error id="accountId-error">
+                      {error.password}
+                    </FormHelperText>
+                  )}
+                  </FormControl>
               </Grid>
             </Grid>
             <Button
