@@ -3,7 +3,6 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -11,7 +10,6 @@ import TextField from '@mui/material/TextField';
 import { useNavigate } from 'react-router-dom';
 import { blue } from '@mui/material/colors';
 import { getRoom, createRoom } from '../services/roomServices';
-import AccountMenu from './Profile'
 
 const theme = createTheme({
   palette: {
@@ -160,20 +158,6 @@ export default function Menu({ setToken }){
         <div className="menu">
             <ThemeProvider theme={theme}>
                 <Container component="main" maxWidth="xs" >
-
-                    <Box
-                    sx={{
-                        marginTop: 8,
-                        alignItems: 'center',
-                        border: 1,
-                        borderRadius: '16px',
-                        borderColor: 'primary.main',
-                    }}
-                    >
-
-                        <Grid container justifyContent="flex-end">
-                            <AccountMenu setToken={setToken}/>
-                        </Grid>
                             
 
                         <Box 
@@ -207,7 +191,7 @@ export default function Menu({ setToken }){
                                 <CreateRoomMenu setToken={setToken} />
                             )}
                         </Box>
-                </Box>
+
                 </Container>
             </ThemeProvider>
         </div>

@@ -26,8 +26,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'foo')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', True)
 
-print(DEBUG)
-
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", None)
 
 if ALLOWED_HOSTS:
@@ -159,8 +157,6 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
-
-## TODO change static paths to make things work
 
 STATICFILES_DIRS = [os.path.join(
     BASE_DIR, "../", "frontend", "build", "static")]

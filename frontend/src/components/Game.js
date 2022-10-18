@@ -126,19 +126,20 @@ const Board = React.forwardRef((_props, ref)=>{
 
     return (
         <div>
-            <Box sx={{marginTop: 4}}>
-                <Typography color="#1a76d2" component="h1" variant="h4">
-                            {status}
-                </Typography>
-            </Box>
+
+
             <Box sx={{
                     marginBottom:8,
-                    marginTop: 4,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: "space-between"
                 }} >
+                <Box sx={{marginBottom: 5}}>
+                <Typography color="#1a76d2" component="h1" variant="h4">
+                            {status}
+                </Typography>
+                </Box>
                 <div className="board">
                     {squares}
                 </div>
@@ -159,7 +160,7 @@ export default function Game(){
 
     useLayoutEffect(()=>{
         if (!ws.current) {
-            let host = (window.location.host === window.location.hostname ? window.location.hostname : window.location.host)
+            let host = (window.location.host === window.location.hostname ? window.location.host : window.location.hostname+':8000')
             host = (window.location.protocol === 'https:' ? 'wss' : 'ws') + '://' + host
             const socket = new WebSocket(host+"/ws/room/"+code+"/"+char+"?token="+token)
             ws.current = socket;
@@ -201,8 +202,8 @@ export default function Game(){
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                }}>
-                <Alert severity="error">
+                }} pt={5}>
+                <Alert variant="string" severity="error" sx={{color:"#d32f2f"}}>
                     <AlertTitle>Error</AlertTitle>
                     This is an error alert — <strong>reload the page!</strong>
                 </Alert>
@@ -213,18 +214,8 @@ export default function Game(){
     {
         return (
 
-            <Container component="main" maxWidth="sm" >
-                <Box
-                sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    border: 1,
-                    borderRadius: '16px',
-                    borderColor: 'primary.main',
-                }}
-                >
+            <Container component="main" maxWidth="xs" >
+
                     <div className="Game">
                     <MovingComponent
                         type="popIn"
@@ -238,41 +229,41 @@ export default function Game(){
                         <Board ref={ws} />
                     </MovingComponent>
                     </div>
-                </Box>
+
             </Container>
         )
     }
     else if (connected){
         return (
-            <div className="wait">
-                <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", marginTop:8 }}>
-                <MovingComponent
-                    type="popIn"
-                    duration="1000ms"
-                    delay="0s"
-                    direction="alternate"
-                    timing="ease"
-                    iteration="infinite"
-                    fillMode="none">
-                        <Typography component="h2" variant="h5">
-                                        Wait for user...
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: "center",
+                px: "auto"}} pt={12} >
+
+                    <MovingComponent
+                        type="popIn"
+                        duration="1000ms"
+                        delay="0s"
+                        direction="alternate"
+                        timing="ease"
+                        iteration="infinite"
+                        fillMode="none">
+
+                            <Typography component="h2" variant="h5">
+                                            Wait for user...
+                            </Typography>
+                        </MovingComponent>
+
+
+
+
+                        <Typography component="h1" variant="h4">
+                            Room code: <b>{code}</b>
                         </Typography>
 
-                    </MovingComponent>
-
-                </Box>
-
-                <Box sx={{marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',}}  >
-                    <Typography component="h1" variant="h4">
-                        Room code: <b>{code}</b>
-                    </Typography>
-                </Box>
-                    
-
-            </div>
+            </Box>
         )
     }
 
