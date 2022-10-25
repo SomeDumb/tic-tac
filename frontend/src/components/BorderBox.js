@@ -1,7 +1,9 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
+import AccountMenu from './Profile'
 
-export const BorderBox = ({children}) => (
+export const BorderBox = ({children, setToken}) => (
     <Container component="main" maxWidth="xs" >
         <Box
         sx={{
@@ -15,7 +17,11 @@ export const BorderBox = ({children}) => (
             height: '350px'
         }}
         >
+            <Grid container justifyContent="flex-end">
+                <AccountMenu setToken={setToken}/>
+            </Grid>
             {children}
         </Box>
     </Container>
+
   );

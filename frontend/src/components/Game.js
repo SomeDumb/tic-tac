@@ -67,7 +67,7 @@ const Board = React.forwardRef((_props, ref)=>{
         status = 'Winner is: ' + winner;
     } 
     else if (isDraw()){
-        status = 'Ничья'
+        status = 'Draw'
     }
     else {
       status = (xIsNext && char === 'x' ) || (!xIsNext && char=== 'o')  ? 'Your move' : 'Opponent move';

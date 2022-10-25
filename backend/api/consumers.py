@@ -1,4 +1,5 @@
 import json
+from django.core.exceptions import ObjectDoesNotExist
 from channels.generic.websocket import JsonWebsocketConsumer
 from time import sleep
 from api.serializers import UserSerializer
@@ -20,7 +21,7 @@ class WSConsumer(JsonWebsocketConsumer):
         character = self.scope['url_route']['kwargs']['character']
         try:
             room = Room.objects.get(code=room_code)
-        except Exception:
+        except ObjectDoesNotExist:
             self.close()
             return
         user = self.scope["user"]
@@ -48,7 +49,7 @@ class WSConsumer(JsonWebsocketConsumer):
         room_code = self.scope['url_route']['kwargs']['code']
         try:
             room = Room.objects.get(code=room_code)
-        except:
+        except ObjectDoesNotExist:
             return
         user = self.scope["user"]
         room.leave(user)
