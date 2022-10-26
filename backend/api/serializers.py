@@ -41,6 +41,7 @@ class UserSerializer(ModelSerializer):
             'last_login': {'read_only': True}
         }
 
+
 class RoomSerializer(ModelSerializer):
 
     class Meta:
@@ -48,7 +49,7 @@ class RoomSerializer(ModelSerializer):
         fields = ('id', 'is_occupied', 'code', 'x_user', 'o_user')
 
         extra_kwargs = {
-            'code':{'read_only':True},
-            'o_user':{'required':False, 'allow_null':True},
-            'x_user':{'required':False, 'allow_null':True}
+            'code': {'read_only': True},
+            'o_user': {'required': False, 'allow_null': True},
+            'x_user': {'required': False, 'allow_null': True}
         }

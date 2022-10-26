@@ -14,6 +14,7 @@ from .models import Room
 
 WRITE_METHODS = []
 
+
 class UserViewSet(viewsets.ModelViewSet):
     model = User
     serializer_class = UserSerializer
@@ -30,7 +31,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return super(UserViewSet, self).get_permissions()
 
 
-
 class RoomViewSet(viewsets.ModelViewSet):
     model = Room
     serializer_class = RoomSerializer
@@ -42,17 +42,17 @@ class RoomViewSet(viewsets.ModelViewSet):
         room.code = room.generate_unique_code()
         room.save()
         return Response(RoomSerializer(room).data, status=status.HTTP_201_CREATED)
-    
+
     def retrieve(self, request, pk=None):
         room = get_object_or_404(Room, code=pk)
         serializer = RoomSerializer(room)
         return Response(serializer.data)
 
     def get_permissions(self, *args, **kwargs):
-        
+
         if self.action == 'list':
             self.permission_classes = (IsAdminUser,)
         if self.action == 'retrive':
             pk = self.kwargs.get('pk', None)
-            
+
         return super(RoomViewSet, self).get_permissions()

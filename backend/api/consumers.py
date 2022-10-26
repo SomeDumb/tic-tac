@@ -43,7 +43,6 @@ class WSConsumer(JsonWebsocketConsumer):
                 self.close()
         else:
             self.close()
-            
 
     def disconnect(self, close_code):
         room_code = self.scope['url_route']['kwargs']['code']
@@ -54,10 +53,10 @@ class WSConsumer(JsonWebsocketConsumer):
         user = self.scope["user"]
         room.leave(user)
         async_to_sync(self.channel_layer.group_send)(self.room_group_name, {
-                'type': 'send_event',
-                'ready': False
+            'type': 'send_event',
+            'ready': False
         })
-    
+
     def receive(self, text_data):
         user = self.scope["user"]
         json_user = UserSerializer(user).data
@@ -71,23 +70,22 @@ class WSConsumer(JsonWebsocketConsumer):
                 'type': 'send_event',
                 **response
             })
-        
+
         if event == 'MESSAGE':
             async_to_sync(self.channel_layer.group_send)(self.room_group_name, {
-                'type': 'send_message', 
-                'event':'message', 
-                'message':message, 
-                'username':json_user})
-        
-            
+                'type': 'send_message',
+                'event': 'message',
+                'message': message,
+                'username': json_user})
+
     def send_event(self, event):
         """ Receive message from room group """
         # Send message to WebSocket
         self.send(text_data=json.dumps({**event}))
-    
+
     def send_message(self, event):
         # Send message to WebSocket
         self.send(text_data=json.dumps({
-            'type':'message',
+            'type': 'message',
             **event
         }))
