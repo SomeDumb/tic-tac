@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -8,6 +8,8 @@ import { getToken } from "../services/authServices";
 import { Container } from "@mui/system";
 import { useParams } from "react-router-dom";
 import { MovingComponent } from "react-moving-text";
+import Tooltip from "@mui/material/Tooltip";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 function Square({ number, value, onPress }) {
   return (
@@ -219,11 +221,22 @@ export default function Game() {
   const [error, setError] = useState(false);
   const [connected, setConnected] = useState(false);
   const [ready, setReady] = useState(false);
+  const [showTooltip, setShowToolip] = useState(false);
+
   const { code, char } = useParams();
   const token = getToken();
   const ws = useRef(null);
 
-  useLayoutEffect(() => {
+  const onCopy = () => {
+    navigator.clipboard.writeText(code);
+    setShowToolip(true);
+  };
+
+  const handleOnTooltipClose = () => {
+    setShowToolip(false);
+  };
+
+  useEffect(() => {
     if (!ws.current) {
       let host =
         window.location.host === window.location.hostname
@@ -242,7 +255,6 @@ export default function Game() {
 
     ws.current.addEventListener("message", (event) => {
       const data = JSON.parse(event.data);
-      console.log(data)
       if (data.connected) {
         setConnected(true);
       }
@@ -261,6 +273,7 @@ export default function Game() {
     ws.current.onclose = () => {
       setError(true);
     };
+
   }, [error, connected, ready, code, char, token]);
 
   if (error) {
@@ -324,9 +337,19 @@ export default function Game() {
             Wait for user...
           </Typography>
         </MovingComponent>
-
-        <Typography component="h1" variant="h4">
-          Room code: <b>{code}</b>
+        <Typography  component="h1" variant="h4">
+          Room code: 
+          <Tooltip
+            open={showTooltip}
+            title={"Copied to clipboard!"}
+            disableInteractive
+            onClose={handleOnTooltipClose}
+            placement="bottom"
+          >
+            <Box onClick={onCopy} display="inline" fontWeight="fontWeightBold" sx={{cursor: 'pointer'}}>
+              {code}<ContentCopyIcon/>
+            </Box>
+          </Tooltip>
         </Typography>
       </Box>
     );
