@@ -139,37 +139,37 @@ export default function Menu({ setToken }) {
 
   return (
     <div className="menu">
-        <Container component="main" maxWidth="xs">
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              width: 1,
-              borderBottom: 1,
-              borderColor: "divider",
-            }}
-          >
-            <Typography component="h1" variant="h4">
-              Options
-            </Typography>
-            <Tabs value={tabIndex} onChange={handleTabChange}>
-              <Tab label="Connect" />
-              <Tab label="Create" />
-            </Tabs>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              width: 1,
-            }}
-          >
-            {tabIndex === 0 && <ConnectMenu setToken={setToken} />}
-            {tabIndex === 1 && <CreateRoomMenu setToken={setToken} />}
-          </Box>
-        </Container>
+      <Container component="main" maxWidth="xs">
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: 1,
+            borderBottom: 1,
+            borderColor: "divider",
+          }}
+        >
+          <Typography component="h1" variant="h4">
+            Options
+          </Typography>
+          <Tabs value={tabIndex} onChange={handleTabChange}>
+            <Tab label="Connect" />
+            <Tab label="Create" />
+          </Tabs>
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: 1,
+          }}
+        >
+          {tabIndex === 0 && <ConnectMenu setToken={setToken} />}
+          {tabIndex === 1 && <CreateRoomMenu setToken={setToken} />}
+        </Box>
+      </Container>
     </div>
   );
 }

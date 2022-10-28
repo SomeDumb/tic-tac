@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -9,7 +9,7 @@ import { Container } from "@mui/system";
 import { useParams } from "react-router-dom";
 import { MovingComponent } from "react-moving-text";
 import Tooltip from "@mui/material/Tooltip";
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 function Square({ number, value, onPress }) {
   return (
@@ -30,28 +30,14 @@ function Square({ number, value, onPress }) {
   );
 }
 
-const Board = React.forwardRef((_props, ref) => {
+const Board = ({ ws }) => {
   let [board, setBoard] = useState([
     ["", "", ""],
     ["", "", ""],
     ["", "", ""],
   ]);
-  let [winner, setWinner] = useState(null);
-  let [xIsNext, setState] = useState(true);
-  const char = useParams().char;
 
-  function isDraw() {
-    for (const element of board) {
-      for (let j = 0; j < board.length; j++) {
-        if (element[j] === "") {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  function calculateWinner() {
+  function calculateWinner(board) {
     const lines = [
       [
         [0, 0],
@@ -108,6 +94,48 @@ const Board = React.forwardRef((_props, ref) => {
     return null;
   }
 
+  let [winner, setWinner] = useState(null);
+  let [xIsNext, setState] = useState(true);
+  const char = useParams().char;
+
+  useEffect(() => {
+    const onMessage = (event) => {
+      const newBoard = board;
+      const data = JSON.parse(event.data);
+      const row = data.row;
+      const col = data.col;
+      const moved = data.char;
+
+      if (xIsNext && char === "o" && moved === "x") {
+        newBoard[row][col] = "X";
+        setWinner(calculateWinner(board));
+        setState(false);
+      } else if (!xIsNext && char === "x" && moved === "o") {
+        newBoard[row][col] = "O";
+        setWinner(calculateWinner(board));
+        setState(true);
+      }
+      setBoard([...newBoard]);
+    };
+
+    ws?.addEventListener("message", onMessage);
+
+    return () => {
+      ws.removeEventListener("message", onMessage);
+    };
+  }, [ws, char, board, xIsNext]);
+
+  function isDraw() {
+    for (const element of board) {
+      for (let j = 0; j < board.length; j++) {
+        if (element[j] === "") {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   let status;
   if (winner) {
     status = "Winner is: " + winner;
@@ -120,40 +148,15 @@ const Board = React.forwardRef((_props, ref) => {
         : "Opponent move";
   }
 
-  ref.current.addEventListener("message", (event) => {
-    const newBoard = board;
-    const data = JSON.parse(event.data);
-    const row = data.row;
-    const col = data.col;
-    const moved = data.char;
-
-    if (xIsNext && char === "o" && moved === "x") {
-      newBoard[row][col] = "X";
-      setWinner(calculateWinner());
-      setState(false);
-    } else if (!xIsNext && char === "x" && moved === "o") {
-      newBoard[row][col] = "O";
-      setWinner(calculateWinner());
-      setState(true);
-    }
-    setBoard([...newBoard]);
-  });
-
   const handleClick = (row, col) => {
     const newBoard = board;
-    ref.current.send(
-      JSON.stringify({
-        message: "clicked " + row + col,
-        text: "clicked",
-        event: "MESSAGE",
-      })
-    );
+
     if (board[row][col] === "") {
       if (xIsNext && char === "x") {
         newBoard[row][col] = "X";
         setState(false);
-        setWinner(calculateWinner());
-        ref.current.send(
+        setWinner(calculateWinner(board));
+        ws.send(
           JSON.stringify({
             message: "moved",
             event: "MOVE",
@@ -166,8 +169,8 @@ const Board = React.forwardRef((_props, ref) => {
       } else if (!xIsNext && char === "o") {
         newBoard[row][col] = "O";
         setState(true);
-        setWinner(calculateWinner());
-        ref.current.send(
+        setWinner(calculateWinner(board));
+        ws.send(
           JSON.stringify({
             message: "moved",
             event: "MOVE",
@@ -215,7 +218,7 @@ const Board = React.forwardRef((_props, ref) => {
       </Box>
     </div>
   );
-});
+};
 
 export default function Game() {
   const [error, setError] = useState(false);
@@ -225,7 +228,7 @@ export default function Game() {
 
   const { code, char } = useParams();
   const token = getToken();
-  const ws = useRef(null);
+  const [ws, setWs] = useState(null);
 
   const onCopy = () => {
     navigator.clipboard.writeText(code);
@@ -237,23 +240,15 @@ export default function Game() {
   };
 
   useEffect(() => {
-    if (!ws.current) {
-      let host =
-        window.location.host === window.location.hostname
-          ? window.location.host
-          : window.location.hostname + ":8000";
-      host =
-        (window.location.protocol === "https:" ? "wss" : "ws") + "://" + host;
-      const socket = new WebSocket(
-        host + "/ws/room/" + code + "/" + char + "?token=" + token
-      );
-      ws.current = socket;
-    }
-    ws.current.onopen = () => {
-      ws.current.send(JSON.stringify({ event: "CONNECTED" }));
+    let attempts = 10; // Attempts of reconnecting
+    let socket;
+
+    const sendConnected = () => {
+      attempts = 10; // Reset attempts
+      socket.send(JSON.stringify({ event: "CONNECTED" }));
     };
 
-    ws.current.addEventListener("message", (event) => {
+    const checkStatus = (event) => {
       const data = JSON.parse(event.data);
       if (data.connected) {
         setConnected(true);
@@ -264,17 +259,59 @@ export default function Game() {
       if (data.ready === false) {
         setReady(false);
       }
-    });
-
-    ws.current.onerror = function () {
-      setError(true);
     };
 
-    ws.current.onclose = () => {
-      setError(true);
+    const subscribe = () => {
+      if (socket !== undefined) {
+        socket.onopen = sendConnected;
+
+        socket.addEventListener("message", checkStatus);
+
+        socket.onclose = () => {
+          setConnected(false);
+          if (--attempts) {
+            setTimeout(function () {
+              connect();
+            }, 2000);
+          } else {
+            unsubscribe();
+            setError(true);
+          }
+        };
+      }
     };
 
-  }, [error, connected, ready, code, char, token]);
+    const unsubscribe = () => {
+      socket?.removeEventListener("message", checkStatus);
+      socket?.removeEventListener("open", sendConnected);
+    };
+
+    const connect = () => {
+      if (socket !== undefined) {
+        unsubscribe();
+        socket.close();
+      }
+
+      let host =
+        window.location.host === window.location.hostname
+          ? window.location.host
+          : window.location.hostname + ":8000";
+      host =
+        (window.location.protocol === "https:" ? "wss" : "ws") + "://" + host;
+      socket = new WebSocket(
+        host + "/ws/room/" + code + "/" + char + "?token=" + token
+      );
+      subscribe(socket);
+      setWs(socket);
+    };
+
+    connect();
+
+    return () => {
+      unsubscribe();
+      socket.close();
+    };
+  }, [char, code, token]);
 
   if (error) {
     return (
@@ -289,7 +326,7 @@ export default function Game() {
       >
         <Alert variant="string" severity="error" sx={{ color: "#d32f2f" }}>
           <AlertTitle>Error</AlertTitle>
-          This is an error alert — <strong>reload the page!</strong>
+          Error — <strong>unable to connect!</strong>
         </Alert>
       </Box>
     );
@@ -307,7 +344,7 @@ export default function Game() {
             iteration="1"
             fillMode="none"
           >
-            <Board ref={ws} />
+            <Board ws={ws} />
           </MovingComponent>
         </div>
       </Container>
@@ -337,8 +374,8 @@ export default function Game() {
             Wait for user...
           </Typography>
         </MovingComponent>
-        <Typography  component="h1" variant="h4">
-          Room code: 
+        <Typography component="h1" variant="h4">
+          Room code:
           <Tooltip
             open={showTooltip}
             title={"Copied to clipboard!"}
@@ -346,11 +383,44 @@ export default function Game() {
             onClose={handleOnTooltipClose}
             placement="bottom"
           >
-            <Box onClick={onCopy} display="inline" fontWeight="fontWeightBold" sx={{cursor: 'pointer'}}>
-              {code}<ContentCopyIcon/>
+            <Box
+              onClick={onCopy}
+              display="inline"
+              fontWeight="fontWeightBold"
+              sx={{ cursor: "pointer" }}
+            >
+              {code}
+              <ContentCopyIcon />
             </Box>
           </Tooltip>
         </Typography>
+      </Box>
+    );
+  } else {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          px: "auto",
+        }}
+        pt={12}
+      >
+        <MovingComponent
+          type="popIn"
+          duration="1000ms"
+          delay="0s"
+          direction="alternate"
+          timing="ease"
+          iteration="infinite"
+          fillMode="none"
+        >
+          <Typography component="h2" variant="h5">
+            Trying to connect..
+          </Typography>
+        </MovingComponent>
       </Box>
     );
   }
