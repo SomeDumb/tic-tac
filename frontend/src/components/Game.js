@@ -10,6 +10,7 @@ import { useParams } from "react-router-dom";
 import { MovingComponent } from "react-moving-text";
 import Tooltip from "@mui/material/Tooltip";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import Grid from "@mui/material/Grid";
 
 function Square({ number, value, onPress }) {
   return (
@@ -30,12 +31,23 @@ function Square({ number, value, onPress }) {
   );
 }
 
-const Board = ({ ws }) => {
+const Board = ({ ws, me, opponent }) => {
   let [board, setBoard] = useState([
     ["", "", ""],
     ["", "", ""],
     ["", "", ""],
   ]);
+
+  function getFontSize(str) {
+    let size = 25;
+    if (str.length > 10) {
+      size = 260 / str.length;
+    }
+    if (str.length < 4) {
+      size = 100 / str.length;
+    }
+    return size + "px";
+  }
 
   function calculateWinner(board) {
     const lines = [
@@ -144,8 +156,8 @@ const Board = ({ ws }) => {
   } else {
     status =
       (xIsNext && char === "x") || (!xIsNext && char === "o")
-        ? "Your move"
-        : "Opponent move";
+        ? `Your move`
+        : `"${opponent}" move`;
   }
 
   const handleClick = (row, col) => {
@@ -209,13 +221,36 @@ const Board = ({ ws }) => {
           justifyContent: "space-between",
         }}
       >
-        <Box sx={{ marginBottom: 5 }}>
+        <Box sx={{ marginBottom: 3 }}>
           <Typography color="#1a76d2" component="h1" variant="h4">
             {status}
           </Typography>
         </Box>
         <div className="board">{squares}</div>
       </Box>
+      <Grid
+        marginTop={10}
+        container
+        spacing={2}
+        justify="center"
+        alignItems="center"
+      >
+        <Grid item xs={5} sx={{ textAlign: "center" }}>
+          <Typography color="black" sx={{ fontSize: getFontSize(me) }}>
+            {me}
+          </Typography>
+        </Grid>
+        <Grid item xs={2} sx={{ textAlign: "center" }}>
+          <Typography color="black" component="h2" variant="h4">
+            VS
+          </Typography>
+        </Grid>
+        <Grid item xs={5} sx={{ textAlign: "center" }}>
+          <Typography color="black" sx={{ fontSize: getFontSize(opponent) }}>
+            {opponent}
+          </Typography>
+        </Grid>
+      </Grid>
     </div>
   );
 };
@@ -225,6 +260,18 @@ export default function Game() {
   const [connected, setConnected] = useState(false);
   const [ready, setReady] = useState(false);
   const [showTooltip, setShowToolip] = useState(false);
+  const [opponent, setOpponent] = useState("");
+  const [me, setMe] = useState("");
+
+  function resize_to_fit(outer, inner) {
+    while (inner.height() > outer.height()) {
+      var fontsize = parseInt(inner.css("font-size")) - 1;
+      inner.css("font-size", fontsize);
+      // some browsers(chrome) the min font return value is 12px
+      if (fontsize <= 1 || parseInt(inner.css("font-size")) >= fontsize + 1)
+        break;
+    }
+  }
 
   const { code, char } = useParams();
   const token = getToken();
@@ -245,7 +292,6 @@ export default function Game() {
 
     const sendConnected = () => {
       attempts = 10; // Reset attempts
-      socket.send(JSON.stringify({ event: "CONNECTED" }));
     };
 
     const checkStatus = (event) => {
@@ -255,9 +301,29 @@ export default function Game() {
       }
       if (data.ready === true) {
         setReady(true);
+        if (char === "o") {
+          setOpponent(data.x.username);
+          setMe(data.o.username);
+        } else {
+          setOpponent(data.o.username);
+          setMe(data.x.username);
+        }
       }
       if (data.ready === false) {
         setReady(false);
+      }
+    };
+
+    const closed = () => {
+      console.log("closed");
+      setConnected(false);
+      if (--attempts) {
+        setTimeout(function () {
+          connect();
+        }, 2000);
+      } else {
+        unsubscribe();
+        setError(true);
       }
     };
 
@@ -267,23 +333,14 @@ export default function Game() {
 
         socket.addEventListener("message", checkStatus);
 
-        socket.onclose = () => {
-          setConnected(false);
-          if (--attempts) {
-            setTimeout(function () {
-              connect();
-            }, 2000);
-          } else {
-            unsubscribe();
-            setError(true);
-          }
-        };
+        socket.addEventListener("close", closed);
       }
     };
 
     const unsubscribe = () => {
       socket?.removeEventListener("message", checkStatus);
       socket?.removeEventListener("open", sendConnected);
+      socket?.removeEventListener("close", closed);
     };
 
     const connect = () => {
@@ -308,6 +365,7 @@ export default function Game() {
     connect();
 
     return () => {
+      console.log("kill");
       unsubscribe();
       socket.close();
     };
@@ -344,7 +402,7 @@ export default function Game() {
             iteration="1"
             fillMode="none"
           >
-            <Board ws={ws} />
+            <Board ws={ws} opponent={opponent} me={me} />
           </MovingComponent>
         </div>
       </Container>
