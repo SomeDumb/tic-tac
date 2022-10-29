@@ -25,8 +25,6 @@ class WSConsumer(JsonWebsocketConsumer):
             self.close()
             return
         user = self.scope["user"]
-        json_user = UserSerializer(user).data
-        json_user = JSONRenderer().render(json_user).decode("utf-8")
         if not room.is_occupied:
             connected = room.connect(user, character)
             if connected:
@@ -35,9 +33,14 @@ class WSConsumer(JsonWebsocketConsumer):
                     'connected': True
                 }))
                 if room.is_occupied:
+                    json_x_user = UserSerializer(room.x_user).data
+                    json_o_user = UserSerializer(room.o_user).data
+                    
                     async_to_sync(self.channel_layer.group_send)(self.room_group_name, {
                         'type': 'send_event',
-                        'ready': True
+                        'ready': True,
+                        'x' : json_x_user,
+                        'o' : json_o_user
                     })
             else:
                 self.close()
@@ -59,8 +62,6 @@ class WSConsumer(JsonWebsocketConsumer):
 
     def receive(self, text_data):
         user = self.scope["user"]
-        json_user = UserSerializer(user).data
-        json_user = JSONRenderer().render(json_user).decode("utf-8")
         response = json.loads(text_data)
         event = response.get("event", None)
         message = response.get("message", None)
@@ -75,8 +76,8 @@ class WSConsumer(JsonWebsocketConsumer):
             async_to_sync(self.channel_layer.group_send)(self.room_group_name, {
                 'type': 'send_message',
                 'event': 'message',
-                'message': message,
-                'username': json_user})
+                'message': message
+                })
 
     def send_event(self, event):
         """ Receive message from room group """
