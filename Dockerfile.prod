@@ -2,7 +2,7 @@ FROM python:3.10
 
 # Install curl, node, & yarn
 RUN apt-get install -y curl \
-    && curl -sL https://deb.nodesource.com/setup_12.x | bash - \
+    && curl -sL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs \
     && curl -o- -L https://yarnpkg.com/install.sh | bash
 
@@ -22,23 +22,14 @@ RUN npm install
 COPY . /app/
 
 RUN npm run build
-# Have to move all static files other than index.html to root/
-# for whitenoise middleware
-WORKDIR /app/frontend/build
 
-
-RUN mkdir root
-RUN mv *.ico root
-RUN mv static/js/ root
-RUN mv *.json root
+WORKDIR /app/frontend/dist
 
 # Collect static files
 RUN mkdir /app/backend/staticfiles
 
 WORKDIR /app/backend
 
-# SECRET_KEY is only included here to avoid raising an error when generating static files.
-# Be sure to add a real SECRET_KEY config variable in Heroku.
 RUN python3 manage.py collectstatic --noinput
 
 EXPOSE $PORT

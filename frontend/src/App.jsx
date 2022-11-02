@@ -1,13 +1,14 @@
 // import './App.css';
 import React, { useState } from "react";
 import { Route, Routes } from "react-router-dom";
-import Game from "./components/Game.js";
+import Game from "./components/Game.jsx";
 import Login from "./components/Login";
 import Menu from "./components/Menu";
 import { getToken } from "./services/authServices.js";
 import axios from "axios";
 import { BorderBox } from "./components/BorderBox";
 import NotFound from "./components/NotFound";
+
 
 function App() {
   let [token, setToken] = useState(getToken());

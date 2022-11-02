@@ -315,7 +315,6 @@ export default function Game() {
     };
 
     const closed = () => {
-      console.log("closed");
       setConnected(false);
       if (--attempts) {
         setTimeout(function () {
@@ -365,7 +364,6 @@ export default function Game() {
     connect();
 
     return () => {
-      console.log("kill");
       unsubscribe();
       socket.close();
     };

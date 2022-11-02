@@ -13,6 +13,7 @@ import datetime
 from pathlib import Path
 import os
 import dj_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -78,7 +79,7 @@ ROOT_URLCONF = 'tic_tac_toe.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "../", "frontend", "build")],
+        'DIRS': [os.path.join(BASE_DIR, "../", "frontend", "dist")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -158,13 +159,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATICFILES_DIRS = [os.path.join(
-    BASE_DIR, "../", "frontend", "build", "static")]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "../", "frontend", "dist", "assets")]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-STATIC_URL = "/static/"
-WHITENOISE_ROOT = os.path.join(BASE_DIR, "../", "frontend", "build", "root")
+STATIC_URL = "/assets/"
+WHITENOISE_ROOT = os.path.join(BASE_DIR, "../", "frontend", "dist", "assets")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
