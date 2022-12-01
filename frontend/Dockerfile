@@ -1,7 +1,6 @@
-FROM node:17.3-alpine
+FROM node:alpine
    WORKDIR /app/
    COPY package.json /app/
    RUN npm install
    COPY . /app/
-   CMD ["npm", "run", "dev"]
    EXPOSE 3000

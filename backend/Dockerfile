@@ -10,7 +10,7 @@ COPY . /app/backend
 # disable writing bytecode
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED=1
-
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 # install dependencies
 RUN pip install --upgrade pip
 COPY requirements.txt /app/backend

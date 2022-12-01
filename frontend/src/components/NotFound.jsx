@@ -10,15 +10,15 @@ export default function NotFound() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          width: 1,
+          gap: "20px"
         }}
       >
-        <Typography variant="h1">404</Typography>
+        <Typography variant="h2">404</Typography>
         <Typography variant="h3">page not found</Typography>
         <Link to="/" style={{ textDecoration: "none" }}>
           <Button
             variant="outlined"
-            sx={{ marginTop: 10, width: 300, height: "50px" }}
+            sx={{ width: 250, height: "50px" }}
           >
             Go home
           </Button>
